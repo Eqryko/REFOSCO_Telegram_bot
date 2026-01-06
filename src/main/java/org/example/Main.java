@@ -16,7 +16,7 @@ __________        _____                           ___________            .__
 public class Main {
     public static void main(String[] args) {
 
-        String botToken = "INSERISCI_IL_TOKEN";
+        String botToken = "8575183641:AAE3fnW-3pvWNm--6FxdpIETNGVHero3kaI";
 
         try {
             DatabaseManager.init();
