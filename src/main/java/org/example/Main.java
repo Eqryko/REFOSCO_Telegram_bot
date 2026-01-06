@@ -1,3 +1,8 @@
+package org.example;
+
+import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
+import org.example.db.DatabaseManager;
+
 /*
 __________        _____                           ___________            .__
 \______   \ _____/ ____\____  ______ ____  ____   \_   _____/ ___________|__| ____  ____
@@ -5,22 +10,17 @@ __________        _____                           ___________            .__
  |    |   \  ___/|  | (  <_> )___ \\  \__(  <_> )  |        \   |  \  | \/  \  \__(  <_> )
  |____|_  /\___  >__|  \____/____  >\___  >____/  /_______  /___|  /__|  |__|\___  >____/
         \/     \/                \/     \/                \/     \/              \/
-        Classe 5BII
-        TPSIT
-        Progetto Telegram Bot
+        Classe 5BII - TPSIT
 */
-
-
-package org.example;
-
-import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 
 public class Main {
     public static void main(String[] args) {
 
-        String botToken = "8575183641:AAE3fnW-3pvWNm--6FxdpIETNGVHero3kaI";
+        String botToken = "INSERISCI_IL_TOKEN";
 
         try {
+            DatabaseManager.init();
+
             TelegramBotsLongPollingApplication app =
                     new TelegramBotsLongPollingApplication();
 

@@ -1,30 +1,23 @@
-/*
-__________        _____                           ___________            .__
-\______   \ _____/ ____\____  ______ ____  ____   \_   _____/ ___________|__| ____  ____
- |       _// __ \   __\/  _ \/  ___// ___\/  _ \   |    __)_ /    \_  __ \  |/ ___\/  _ \
- |    |   \  ___/|  | (  <_> )___ \\  \__(  <_> )  |        \   |  \  | \/  \  \__(  <_> )
- |____|_  /\___  >__|  \____/____  >\___  >____/  /_______  /___|  /__|  |__|\___  >____/
-        \/     \/                \/     \/                \/     \/              \/
-        Classe 5BII
-        TPSIT
-        Progetto Telegram Bot
-*/
-
 package org.example;
 
 import org.example.api.HighlightlyClient;
+import org.example.db.DatabaseManager;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
 public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
 
     private final TelegramClient telegramClient;
 
-    public MantisNFL(String botToken) {
-        this.telegramClient = new OkHttpTelegramClient(botToken);
+    public MantisNFL(String token) {
+        this.telegramClient = new OkHttpTelegramClient(token);
     }
 
     @Override
@@ -33,34 +26,130 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
         if (!update.hasMessage() || !update.getMessage().hasText()) return;
 
         String text = update.getMessage().getText();
-        Long chatId = update.getMessage().getChatId();
+        long chatId = update.getMessage().getChatId();
+        String username = update.getMessage().getFrom().getUserName();
+
+        registerUser(update.getMessage().getFrom().getId(), username);
+        incrementStat(text);
 
         String response;
 
         switch (text) {
-            case "/start":
-                response = "🏈 Benvenuto su MantisNFL!\n" +
-                        "/results - risultati NFL\n" +
-                        "/standings - classifica";
-                break;
-            case "/results":
-                response = HighlightlyClient.getLatestResults();
-                break;
-            case "/standings":
-                response = HighlightlyClient.getStandings();
-                break;
-            default:
-                response = "❌ Comando non riconosciuto";
+            case "/start" -> response = """
+                    🏈 Benvenuto su MantisNFL!
+                    
+                    /results - Risultati NFL
+                    /lastgames - Partite salvate
+                    /stats - Statistiche bot
+                    /help - Lista comandi
+                    """;
+
+            case "/help" -> response = """
+                    📌 Comandi disponibili:
+                    
+                    /results
+                    /lastgames
+                    /stats
+                    """;
+
+            case "/results" -> response = HighlightlyClient.getLatestResults();
+
+            case "/lastgames" -> response = getLastGames();
+
+            case "/stats" -> response = getStats();
+
+            default -> response = "❌ Comando non riconosciuto";
         }
-        if (response.length() > 4000) {
-            response = response.substring(0, 4000) + "\n\n⚠️ Output troncato";
-        }
-        SendMessage msg = new SendMessage(chatId.toString(), response);
 
         try {
-            telegramClient.execute(msg);
+            telegramClient.execute(
+                    new SendMessage(String.valueOf(chatId), response)
+            );
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // ---------------- DATABASE ----------------
+
+    private void registerUser(long telegramId, String username) {
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement("""
+                     INSERT OR IGNORE INTO users
+                     (telegram_id, username, first_seen, commands_used)
+                     VALUES (?, ?, datetime('now'), 0)
+                     """)) {
+
+            ps.setLong(1, telegramId);
+            ps.setString(2, username);
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void incrementStat(String command) {
+        try (Connection c = DatabaseManager.getConnection()) {
+
+            PreparedStatement ps = c.prepareStatement("""
+                INSERT INTO stats (command, usage_count)
+                VALUES (?, 1)
+                ON CONFLICT(command)
+                DO UPDATE SET usage_count = usage_count + 1
+            """);
+
+            ps.setString(1, command);
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getStats() {
+        StringBuilder sb = new StringBuilder("📊 Statistiche bot\n\n");
+
+        try (Connection c = DatabaseManager.getConnection();
+             ResultSet rs = c.createStatement()
+                     .executeQuery("SELECT * FROM stats")) {
+
+            while (rs.next()) {
+                sb.append(rs.getString("command"))
+                        .append(": ")
+                        .append(rs.getInt("usage_count"))
+                        .append("\n");
+            }
+
+        } catch (Exception e) {
+            return "Errore lettura statistiche";
+        }
+
+        return sb.toString();
+    }
+
+    private String getLastGames() {
+        StringBuilder sb = new StringBuilder("🏈 Ultime partite salvate\n\n");
+
+        try (Connection c = DatabaseManager.getConnection();
+             ResultSet rs = c.createStatement()
+                     .executeQuery("SELECT * FROM matches ORDER BY id DESC LIMIT 5")) {
+
+            while (rs.next()) {
+                sb.append(rs.getString("home_team"))
+                        .append(" ")
+                        .append(rs.getInt("home_score"))
+                        .append(" - ")
+                        .append(rs.getInt("away_score"))
+                        .append(" ")
+                        .append(rs.getString("away_team"))
+                        .append("\n");
+            }
+
+        } catch (Exception e) {
+            return "Nessuna partita salvata";
+        }
+
+        return sb.toString();
     }
 }
