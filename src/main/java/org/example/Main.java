@@ -13,7 +13,7 @@ public class Main {
 
             app.registerBot(botToken, new MantisNFL(botToken));
 
-            System.out.println("🤖 Bot avviato correttamente");
+            System.out.println("!!! Bot avviato correttamente");
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -46,7 +46,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
         SendMessage msg = new SendMessage(chatId.toString(), response);
 
         try {
-            telegramClient.execute(msg); // ✅ ORA ARRIVA SU TELEGRAM
+            telegramClient.execute(msg);
         } catch (Exception e) {
             e.printStackTrace();
         }
