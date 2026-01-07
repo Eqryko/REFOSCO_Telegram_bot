@@ -43,27 +43,32 @@ public class HighlightlyClient {
     private static String parseMatches(String json) throws IOException {
 
         JsonNode root = mapper.readTree(json);
-        JsonNode data = root.get("data");
+        JsonNode data = root.path("data");
 
-        List<MatchResult> results = new ArrayList<>();
+        StringBuilder sb = new StringBuilder("🏈 NFL – Ultimi risultati\n\n");
 
         int count = 0;
         for (JsonNode match : data) {
-            if (count++ == 5) break; // max 5 partite
+            if (count++ == 5) break;
 
-            String home = match.get("homeTeam").get("name").asText();
-            String away = match.get("awayTeam").get("name").asText();
-            int homeScore = match.get("homeScore").asInt();
-            int awayScore = match.get("awayScore").asInt();
+            String home = match.path("homeTeam").path("name").asText("Home");
+            String away = match.path("awayTeam").path("name").asText("Away");
 
-            results.add(new MatchResult(home, away, homeScore, awayScore));
-        }
+            JsonNode score = match.path("score");
+            int homeScore = score.path("home").asInt(0);
+            int awayScore = score.path("away").asInt(0);
 
-        StringBuilder sb = new StringBuilder("🏈 NFL – Ultimi risultati\n\n");
-        for (MatchResult r : results) {
-            sb.append(r.format()).append("\n");
+            sb.append(home)
+                    .append(" ")
+                    .append(homeScore)
+                    .append(" - ")
+                    .append(awayScore)
+                    .append(" ")
+                    .append(away)
+                    .append("\n");
         }
 
         return sb.toString();
     }
+
 }
