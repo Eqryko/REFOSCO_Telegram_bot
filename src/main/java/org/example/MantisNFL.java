@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.api.EspnClient;
 import org.example.api.HighlightlyClient;
 import org.example.db.DatabaseManager;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
@@ -25,40 +26,48 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
 
         if (!update.hasMessage() || !update.getMessage().hasText()) return;
 
-        String text = update.getMessage().getText();
+        String text = update.getMessage().getText().trim();
         long chatId = update.getMessage().getChatId();
         String username = update.getMessage().getFrom().getUserName();
+        long telegramId = update.getMessage().getFrom().getId();
 
-        registerUser(update.getMessage().getFrom().getId(), username);
+        registerUser(telegramId, username);
         incrementStat(text);
 
         String response;
 
         switch (text) {
+
             case "/start" -> response = """
                     🏈 Benvenuto su MantisNFL!
                     
-                    /results - Risultati NFL
+                    Comandi disponibili:
+                    /results   - Ultimi risultati NFL
+                    /standings - Classifica NFL
+                    /teams     - Squadre NFL
                     /lastgames - Partite salvate
-                    /stats - Statistiche bot
-                    /help - Lista comandi
+                    /stats     - Statistiche bot
+                    /help
+                    /highlights
                     """;
 
             case "/help" -> response = """
-                    📌 Comandi disponibili:
+                    📌 Comandi:
                     
-                    /results
-                    /lastgames
-                    /stats
+                    /results   - Ultimi risultati NFL
+                    /standings - Classifica NFL
+                    /teams     - Squadre NFL
+                    /lastgames - Partite salvate
+                    /stats     - Statistiche bot
+                    /highlights
                     """;
 
-            case "/results" -> response = HighlightlyClient.getLatestResults();
+            case "/results" -> response = EspnClient.getResults();
+            case "/standings" -> response = EspnClient.getStandings();
+            case "/teams" -> response = EspnClient.getTeams();
 
-            case "/lastgames" -> response = getLastGames();
 
-            case "/stats" -> response = getStats();
-
-            default -> response = "❌ Comando non riconosciuto";
+            default -> response = "❌ Comando non riconosciuto. Usa /help";
         }
 
         try {
@@ -90,14 +99,13 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
     }
 
     private void incrementStat(String command) {
-        try (Connection c = DatabaseManager.getConnection()) {
-
-            PreparedStatement ps = c.prepareStatement("""
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement("""
                 INSERT INTO stats (command, usage_count)
                 VALUES (?, 1)
                 ON CONFLICT(command)
                 DO UPDATE SET usage_count = usage_count + 1
-            """);
+            """)) {
 
             ps.setString(1, command);
             ps.executeUpdate();
@@ -122,7 +130,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
             }
 
         } catch (Exception e) {
-            return "Errore lettura statistiche";
+            return "❌ Errore lettura statistiche";
         }
 
         return sb.toString();
@@ -133,7 +141,11 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
 
         try (Connection c = DatabaseManager.getConnection();
              ResultSet rs = c.createStatement()
-                     .executeQuery("SELECT * FROM matches ORDER BY id DESC LIMIT 5")) {
+                     .executeQuery("""
+                        SELECT * FROM matches
+                        ORDER BY id DESC
+                        LIMIT 5
+                     """)) {
 
             while (rs.next()) {
                 sb.append(rs.getString("home_team"))
@@ -147,7 +159,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
             }
 
         } catch (Exception e) {
-            return "Nessuna partita salvata";
+            return "⚠ Nessuna partita salvata";
         }
 
         return sb.toString();
