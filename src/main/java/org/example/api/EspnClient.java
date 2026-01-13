@@ -77,25 +77,34 @@ public class EspnClient {
             }
 
             JsonNode root = mapper.readTree(response.body().string());
-            JsonNode entries = root
-                    .path("children").get(0)
-                    .path("standings").path("entries");
+            JsonNode groups = root.path("children");
 
             StringBuilder sb = new StringBuilder("🏆 NFL – Standings\n\n");
 
-            int pos = 1;
-            for (JsonNode team : entries) {
-                if (pos > 10) break;
+            for (JsonNode group : groups) {
 
-                String name = team.path("team").path("displayName").asText();
-                int wins = team.path("stats").get(0).path("value").asInt();
-                int losses = team.path("stats").get(1).path("value").asInt();
+                String groupName = group.path("name").asText();
+                sb.append("📌 ").append(groupName).append("\n");
 
-                sb.append(pos++).append(". ")
-                        .append(name)
-                        .append(" (")
-                        .append(wins).append("-")
-                        .append(losses).append(")\n");
+                JsonNode entries =
+                        group.path("standings").path("entries");
+
+                int pos = 1;
+                for (JsonNode team : entries) {
+                    if (pos > 4) break;
+
+                    String name = team.path("team").path("displayName").asText();
+                    int wins = team.path("stats").get(0).path("value").asInt();
+                    int losses = team.path("stats").get(1).path("value").asInt();
+
+                    sb.append(pos++)
+                            .append(". ")
+                            .append(name)
+                            .append(" (")
+                            .append(wins).append("-")
+                            .append(losses).append(")\n");
+                }
+                sb.append("\n");
             }
 
             return sb.toString();
@@ -104,6 +113,7 @@ public class EspnClient {
             return "❌ Errore parsing standings";
         }
     }
+
 
     // ---------------- TEAMS ----------------
 
@@ -128,8 +138,10 @@ public class EspnClient {
 
             for (JsonNode t : teams) {
                 sb.append("• ")
+                        .append(t.path("team").path("abbreviation").asText()).append(" ")
                         .append(t.path("team").path("displayName").asText())
-                        .append("\n");
+                        .append(" (ID: ").append(t.path("team").path("id").asText())
+                        .append(")\n");
             }
 
             return sb.toString();
@@ -138,4 +150,181 @@ public class EspnClient {
             return "❌ Errore caricamento squadre";
         }
     }
+    public static String getNews() {
+
+        String url = BASE_URL + "/news";
+        Request request = new Request.Builder().url(url).build();
+
+        try (Response response = client.newCall(request).execute()) {
+
+            if (!response.isSuccessful())
+                return "❌ Errore ESPN: " + response.code();
+
+            JsonNode articles = mapper
+                    .readTree(response.body().string())
+                    .path("articles");
+
+            StringBuilder sb = new StringBuilder("📰 NFL News\n\n");
+
+            int count = 0;
+            for (JsonNode a : articles) {
+                if (count++ == 5) break;
+
+                sb.append("• ")
+                        .append(a.path("headline").asText())
+                        .append("\n");
+            }
+
+            return sb.toString();
+
+        } catch (Exception e) {
+            return "❌ Errore caricamento news";
+        }
+    }
+    public static String Roster(int id) {
+
+        String url = BASE_URL + "/teams/" + id + "/roster";
+
+        Request request = new Request.Builder().url(url).build();
+
+        try (Response response = client.newCall(request).execute()) {
+
+            if (!response.isSuccessful()) {
+                return "❌ Errore ESPN: " + response.code();
+            }
+
+            JsonNode root = mapper.readTree(response.body().string());
+            JsonNode athletes = root.path("athletes");
+
+            StringBuilder sb = new StringBuilder("👥 Giocatori NFL (Sample)\n\n");
+
+            int count = 0;
+            for (JsonNode group : athletes) {
+                for (JsonNode p : group.path("items")) {
+                    if (count++ == 5) break;
+
+                    sb.append("• ")
+                            .append(p.path("fullName").asText())
+                            .append(" – ")
+                            .append(p.path("position").path("abbreviation").asText())
+                            .append("\n");
+                }
+            }
+
+            return sb.toString();
+
+        } catch (Exception e) {
+            return "❌ Errore caricamento giocatori";
+        }
+    }
+
+    public static String getLeaders() {
+
+        String url = BASE_URL + "/leaders";
+
+        Request request = new Request.Builder().url(url).build();
+
+        try (Response response = client.newCall(request).execute()) {
+
+            if (!response.isSuccessful()) {
+                return "❌ Errore ESPN: " + response.code();
+            }
+
+            JsonNode root = mapper.readTree(response.body().string());
+            JsonNode categories = root.path("categories");
+
+            StringBuilder sb = new StringBuilder("🔥 NFL – Leader Statistici\n\n");
+
+            int catCount = 0;
+            for (JsonNode cat : categories) {
+                if (catCount++ == 3) break;
+
+                sb.append("📊 ").append(cat.path("name").asText()).append("\n");
+
+                JsonNode leaders = cat.path("leaders");
+                for (int i = 0; i < Math.min(3, leaders.size()); i++) {
+                    JsonNode l = leaders.get(i);
+
+                    sb.append("• ")
+                            .append(l.path("athlete").path("displayName").asText())
+                            .append(" (")
+                            .append(l.path("value").asText())
+                            .append(")\n");
+                }
+                sb.append("\n");
+            }
+
+            return sb.toString();
+
+        } catch (Exception e) {
+            return "❌ Errore parsing leaders";
+        }
+    }
+
+    public static String getTodayGames() {
+
+        String url = BASE_URL + "/scoreboard";
+        Request request = new Request.Builder().url(url).build();
+
+        try (Response response = client.newCall(request).execute()) {
+
+            if (!response.isSuccessful())
+                return "❌ Errore ESPN";
+
+            JsonNode events = mapper
+                    .readTree(response.body().string())
+                    .path("events");
+
+            StringBuilder sb = new StringBuilder("📅 Partite di oggi\n\n");
+
+            int count = 0;
+            for (JsonNode e : events) {
+                if (count++ == 3) break;
+                sb.append("• ").append(e.path("name").asText()).append("\n");
+            }
+
+            return sb.toString();
+
+        } catch (Exception e) {
+            return "❌ Nessuna partita oggi";
+        }
+    }
+    public static String getTeamById(int teamId) {
+
+        String url = BASE_URL + "/teams/" + teamId + "?enable=venues";
+        Request request = new Request.Builder().url(url).build();
+
+        try (Response response = client.newCall(request).execute()) {
+
+            if (!response.isSuccessful()) {
+                return "❌ Team non trovato";
+            }
+
+            JsonNode root = mapper.readTree(response.body().string());
+            JsonNode team = root.path("team");
+
+            String name = team.path("displayName").asText("N/A");
+            String abbrev = team.path("abbreviation").asText("N/A");
+            String color = team.path("color").asText("N/A");
+
+            String venue = "N/A";
+            JsonNode venues = root.path("venues");
+            if (venues.isArray() && venues.size() > 0) {
+                venue = venues.get(0).path("fullName").asText("N/A");
+            }
+
+            return """
+                🏈 %s (%s)
+                
+                🏟 Stadio: %s
+                🎨 Colore: #%s
+                🆔 Team ID: %d
+                """.formatted(name, abbrev, venue, color, teamId);
+
+        } catch (Exception e) {
+            return "❌ Errore caricamento team";
+        }
+    }
+
+
 }

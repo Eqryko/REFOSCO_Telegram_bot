@@ -1,7 +1,6 @@
 package org.example;
 
 import org.example.api.EspnClient;
-import org.example.api.HighlightlyClient;
 import org.example.db.DatabaseManager;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -12,6 +11,9 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
 
@@ -20,6 +22,8 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
     public MantisNFL(String token) {
         this.telegramClient = new OkHttpTelegramClient(token);
     }
+    private final Map<Long, String> userState = new HashMap<>();
+
 
     @Override
     public void consume(Update update) {
@@ -35,37 +39,139 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
         incrementStat(text);
 
         String response;
+        // Gestione input successivo
+        if (userState.containsKey(chatId)) {
+
+            String state = userState.get(chatId);
+
+            if (state.equals("WAITING_TEAM_ID")) {
+
+                if (!text.matches("\\d+")) {
+                    response = "❌ Inserisci un ID valido (numero)";
+                } else {
+                    int teamId = Integer.parseInt(text);
+                    response = EspnClient.getTeamById(teamId);
+                    userState.remove(chatId);
+                }
+
+                try {
+                    telegramClient.execute(
+                            new SendMessage(String.valueOf(chatId), response)
+                    );
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+
+            if(state.equals("WAITING_TEAM_ROSTER")) {
+                if (!text.matches("\\d+")) {
+                    response = "❌ Inserisci un ID valido (numero)";
+                } else {
+                    int teamId = Integer.parseInt(text);
+                    response = EspnClient.Roster(teamId);
+                    userState.remove(chatId);
+                }
+
+                try {
+                    telegramClient.execute(
+                            new SendMessage(String.valueOf(chatId), response)
+                    );
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+        }
+
 
         switch (text) {
 
+            // ---------------- START ----------------
+
             case "/start" -> response = """
-                    🏈 Benvenuto su MantisNFL!
+                    🏈 **MantisNFL Bot**
                     
-                    Comandi disponibili:
-                    /results   - Ultimi risultati NFL
-                    /standings - Classifica NFL
-                    /teams     - Squadre NFL
-                    /lastgames - Partite salvate
-                    /stats     - Statistiche bot
-                    /help
-                    /highlights
-                    """;
+                    Benvenuto *%s*!  
+                    Qui puoi seguire la **NFL in tempo reale** 📊
+                    
+                    🔥 **Cosa puoi fare**
+                    • Risultati e partite
+                    • Classifiche ufficiali
+                    • Squadre e giocatori
+                    • News e statistiche
+                    • Storico utilizzo bot
+                    
+                    📌 **Comandi principali**
+                    /results   – Risultati e prossime partite  
+                    /standings – Classifica NFL  
+                    /teams     – Squadre NFL  
+                    /news      – Ultime news  
+                    /players   – Giocatori  
+                    /leaders   – Leader statistici  
+                    /today     – Partite di oggi  
+                    /lastgames – Partite salvate  
+                    /stats     – Statistiche bot  
+                    /help      – Aiuto
+                    
+                    🐜 *Powered by ESPN API*
+                    """.formatted(username != null ? username : "utente");
+
+            // ---------------- HELP ----------------
 
             case "/help" -> response = """
-                    📌 Comandi:
+                    📖 **Guida comandi**
                     
-                    /results   - Ultimi risultati NFL
-                    /standings - Classifica NFL
-                    /teams     - Squadre NFL
-                    /lastgames - Partite salvate
-                    /stats     - Statistiche bot
-                    /highlights
+                    🏈 Partite
+                    /results   – Risultati e match futuri
+                    /today     – Partite di oggi
+                    
+                    🏆 Classifiche
+                    /standings – Classifica NFL
+                    /leaders   – Leader statistici
+                    
+                    📰 Info
+                    /teams     – Squadre NFL
+                    /roster   – Giocatori
+                    /news      – Ultime news
+                    
+                    📊 Bot
+                    /lastgames – Partite salvate
+                    /stats     – Statistiche utilizzo
                     """;
+
+            // ---------------- ESPN API ----------------
 
             case "/results" -> response = EspnClient.getResults();
             case "/standings" -> response = EspnClient.getStandings();
             case "/teams" -> response = EspnClient.getTeams();
+            case "/team" -> {
+                userState.put(chatId, "WAITING_TEAM_ID");
+                response = """
+            🏈 Team NFL
+            
+            🔢 Inserisci l'ID del team
+            Esempio: 12 = Kansas City Chiefs
+            """;
+            }
 
+            case "/news" -> response = EspnClient.getNews();
+            case "/roster" -> {
+                userState.put(chatId, "WAITING_TEAM_ROSTER");
+                response = """
+                        🏈 Team NFL
+                        
+                        🔢 Inserisci l'ID del team
+                        Esempio: 12 = Kansas City Chiefs
+                        """;
+            }
+            case "/leaders" -> response = EspnClient.getLeaders();
+            case "/today" -> response = EspnClient.getTodayGames();
+
+            // ---------------- DATABASE ----------------
+
+            case "/stats" -> response = getStats();
+            case "/lastgames" -> response = getLastGames();
 
             default -> response = "❌ Comando non riconosciuto. Usa /help";
         }
@@ -116,14 +222,15 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
     }
 
     private String getStats() {
-        StringBuilder sb = new StringBuilder("📊 Statistiche bot\n\n");
+        StringBuilder sb = new StringBuilder("📊 **Statistiche bot**\n\n");
 
         try (Connection c = DatabaseManager.getConnection();
              ResultSet rs = c.createStatement()
                      .executeQuery("SELECT * FROM stats")) {
 
             while (rs.next()) {
-                sb.append(rs.getString("command"))
+                sb.append("• ")
+                        .append(rs.getString("command"))
                         .append(": ")
                         .append(rs.getInt("usage_count"))
                         .append("\n");
@@ -137,7 +244,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
     }
 
     private String getLastGames() {
-        StringBuilder sb = new StringBuilder("🏈 Ultime partite salvate\n\n");
+        StringBuilder sb = new StringBuilder("🏈 **Ultime partite salvate**\n\n");
 
         try (Connection c = DatabaseManager.getConnection();
              ResultSet rs = c.createStatement()
@@ -148,7 +255,8 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                      """)) {
 
             while (rs.next()) {
-                sb.append(rs.getString("home_team"))
+                sb.append("• ")
+                        .append(rs.getString("home_team"))
                         .append(" ")
                         .append(rs.getInt("home_score"))
                         .append(" - ")
