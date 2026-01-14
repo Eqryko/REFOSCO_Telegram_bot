@@ -2,11 +2,15 @@ package org.example;
 
 import org.example.api.EspnClient;
 import org.example.db.DatabaseManager;
+import org.example.api.TeamData;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
+
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,8 +53,32 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                 if (!text.matches("\\d+")) {
                     response = "❌ Inserisci un ID valido (numero)";
                 } else {
+
                     int teamId = Integer.parseInt(text);
-                    response = EspnClient.getTeamById(teamId);
+                    TeamData team = EspnClient.getTeamById(teamId);
+
+                    if (team == null) {
+                        response = "❌ Team non trovato";
+                    } else {
+
+                        // 📸 Invia logo se presente
+                        if (team.logoUrl != null && !team.logoUrl.equals("N/A")) {
+                            try {
+                                SendPhoto photo = new SendPhoto(
+                                        String.valueOf(chatId),
+                                        new InputFile(team.logoUrl)
+                                );
+                                telegramClient.execute(photo);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+
+                        // 📝 Testo squadra
+                        response = team.text;
+                    }
+
                     userState.remove(chatId);
                 }
 

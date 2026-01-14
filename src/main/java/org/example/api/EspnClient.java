@@ -3,6 +3,7 @@ package org.example.api;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
+import org.example.api.TeamData;
 
 import java.io.IOException;
 
@@ -246,7 +247,7 @@ public class EspnClient {
             return "❌ Nessuna partita oggi";
         }
     }
-    public static String getTeamById(int teamId) {
+    public static TeamData getTeamById(int teamId) {
 
         String url = BASE_URL + "/teams/" + teamId + "?enable=venues";
         Request request = new Request.Builder().url(url).build();
@@ -254,7 +255,7 @@ public class EspnClient {
         try (Response response = client.newCall(request).execute()) {
 
             if (!response.isSuccessful()) {
-                return "❌ Team non trovato";
+                return null;
             }
 
             JsonNode root = mapper.readTree(response.body().string());
@@ -263,23 +264,46 @@ public class EspnClient {
             String name = team.path("displayName").asText("N/A");
             String abbrev = team.path("abbreviation").asText("N/A");
             String color = team.path("color").asText("N/A");
+            String altColor = team.path("alternateColor").asText("N/A");
+            String location = team.path("location").asText("N/A");
+            String standing = team.path("standingSummary").asText("N/A");
 
+            // ✅ LOGO
+            String logoUrl = "N/A";
+            JsonNode logos = team.path("logos");
+            if (logos.isArray() && logos.size() > 0) {
+                logoUrl = logos.get(0).path("href").asText("N/A");
+            }
+
+            // ✅ STADIO
             String venue = "N/A";
             JsonNode venues = root.path("venues");
             if (venues.isArray() && venues.size() > 0) {
                 venue = venues.get(0).path("fullName").asText("N/A");
             }
 
-            return """
-                🏈 %s (%s)
-                
-                🏟 Stadio: %s
-                🎨 Colore: #%s
-                🆔 Team ID: %d
-                """.formatted(name, abbrev, venue, color, teamId);
+            String text = """
+🏈 **%s (%s)**
+
+📍 Città: %s
+🏟 Stadio: %s
+🎨 Colori: #%s / #%s
+📊 Posizione: %s
+🆔 Team ID: %d
+""".formatted(
+                    name, abbrev,
+                    location,
+                    venue,
+                    color, altColor,
+                    standing,
+                    teamId
+            );
+
+            return new TeamData(text, logoUrl);
 
         } catch (Exception e) {
-            return "❌ Errore caricamento team";
+            return null;
         }
     }
+
 }
