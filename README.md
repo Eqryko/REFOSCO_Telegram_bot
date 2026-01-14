@@ -67,22 +67,13 @@ Inviare il comando /start
 Comandi disponibili
 /start	Avvia il bot e registra l’utente
 /results	Mostra le ultime partite NFL
-/lastgames	Mostra le ultime partite salvate
+/save	Salva le ultime partite
 /stats	Statistiche di utilizzo del bot
-/roster
-/teams
-/team
+/roster Giocatiori di una squadra
+/teams Stampa tutte le squadre
+/team Dettagli di una squadra
 /help	Lista comandi disponibili
 
 Database SQLite
 
 Il progetto utilizza SQLite per garantire persistenza dei dati.
-
-
-
-
-## Configurazione
-
-1. Rinominare `config.properties.example` in `config.properties`
-2. Inserire la propria API key Highlightly
-3. Avviare il progetto
