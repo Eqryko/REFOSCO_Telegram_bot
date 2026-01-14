@@ -61,7 +61,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                         response = "❌ Team non trovato";
                     } else {
 
-                        // 📸 Invia logo se presente
+                        // Invia logo se presente
                         if (team.logoUrl != null && !team.logoUrl.equals("N/A")) {
                             try {
                                 SendPhoto photo = new SendPhoto(
@@ -75,7 +75,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                         }
 
 
-                        // 📝 Testo squadra
+                        // Testo squadra
                         response = team.text;
                     }
 
@@ -83,8 +83,13 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                 }
 
                 try {
+                    SendMessage sm = new SendMessage(
+                            String.valueOf(chatId),
+                            response
+                    );
+                    sm.setParseMode("Markdown");
                     telegramClient.execute(
-                            new SendMessage(String.valueOf(chatId), response)
+                            sm
                     );
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -102,8 +107,13 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                 }
 
                 try {
+                    SendMessage sm = new SendMessage(
+                            String.valueOf(chatId),
+                            response
+                    );
+                    sm.setParseMode("Markdown");
                     telegramClient.execute(
-                            new SendMessage(String.valueOf(chatId), response)
+                            sm
                     );
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -118,19 +128,19 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
             // ---------------- START ----------------
 
             case "/start" -> response = """
-                    🏈 **MantisNFL Bot**
+                    🏈 *MantisNFL Bot*
                     
                     Benvenuto *%s*!  
                     Qui puoi seguire la **NFL in tempo reale** 📊
                     
-                    🔥 **Cosa puoi fare**
+                    🔥 *Cosa puoi fare*
                     • Risultati e partite
                     • Classifiche ufficiali
                     • Squadre e giocatori
                     • News e statistiche
                     • Storico utilizzo bot
                     
-                    📌 **Comandi principali**
+                    📌 *Comandi principali*
                     /results   – Risultati e prossime partite
                     /teams     – Squadre NFL  
                     /team      - Singola squadra
@@ -147,7 +157,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
             // ---------------- HELP ----------------
 
             case "/help" -> response = """
-                    📖 **Guida comandi**
+                    📖 *Guida comandi*
                     
                     🏈 Partite
                     /results   – Risultati e match futuri
@@ -183,7 +193,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
             case "/roster" -> {
                 userState.put(chatId, "WAITING_TEAM_ROSTER");
                 response = """
-                        🏈 Team NFL
+                        🏈 *Team NFL*
                         
                         🔢 Inserisci l'ID del team
                         Esempio: 12 = Kansas City Chiefs
@@ -201,8 +211,13 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
         }
 
         try {
+            SendMessage sm = new SendMessage(
+                    String.valueOf(chatId),
+                    response
+            );
+            sm.setParseMode("Markdown");
             telegramClient.execute(
-                    new SendMessage(String.valueOf(chatId), response)
+                    sm
             );
         } catch (Exception e) {
             e.printStackTrace();
@@ -246,7 +261,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
     }
 
     private String getStats() {
-        StringBuilder sb = new StringBuilder("📊 **Statistiche bot**\n\n");
+        StringBuilder sb = new StringBuilder("📊 *Statistiche bot*\n\n");
 
         try (Connection c = DatabaseManager.getConnection();
              ResultSet rs = c.createStatement()
@@ -268,7 +283,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
     }
 
     private String getLastGames() {
-        StringBuilder sb = new StringBuilder("🏈 **Ultime partite salvate**\n\n");
+        StringBuilder sb = new StringBuilder("🏈 *Ultime partite salvate*\n\n");
 
         try (Connection c = DatabaseManager.getConnection();
              ResultSet rs = c.createStatement()

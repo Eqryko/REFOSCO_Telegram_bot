@@ -32,7 +32,7 @@ public class EspnClient {
             JsonNode root = mapper.readTree(response.body().string());
             JsonNode events = root.path("events");
 
-            StringBuilder sb = new StringBuilder("🏈 NFL – Partite\n\n");
+            StringBuilder sb = new StringBuilder("🏈 *NFL – Partite*\n\n");
 
             int count = 0;
             for (JsonNode event : events) {
@@ -65,7 +65,7 @@ public class EspnClient {
 
     // ---------------- STANDINGS ----------------
 
-    public static String getStandings() {
+    public static String getStandings() { //non funziona
 
         String url = BASE_URL + "/standings";
 
@@ -135,11 +135,11 @@ public class EspnClient {
                     .path("leagues").get(0)
                     .path("teams");
 
-            StringBuilder sb = new StringBuilder("🏈 Squadre NFL\n\n");
+            StringBuilder sb = new StringBuilder("🏈 *Squadre NFL*\n\n");
 
             for (JsonNode t : teams) {
-                sb.append("• ")
-                        .append(t.path("team").path("abbreviation").asText()).append(" ")
+                sb.append("• *")
+                        .append(t.path("team").path("abbreviation").asText()).append("* ")
                         .append(t.path("team").path("displayName").asText())
                         .append(" (ID: ").append(t.path("team").path("id").asText())
                         .append(")\n");
@@ -165,15 +165,17 @@ public class EspnClient {
                     .readTree(response.body().string())
                     .path("articles");
 
-            StringBuilder sb = new StringBuilder("📰 Ultime NFL News ESPN\n\n");
+            StringBuilder sb = new StringBuilder("📰 *Ultime NFL News ESPN*\n\n");
 
             int count = 0;
             for (JsonNode a : articles) {
                 if (count++ == 5) break;
 
-                sb.append("• ")
+                sb.append("• *")
                         .append(a.path("headline").asText())
-                        .append("\n");
+                        .append("*\n")
+                        .append(a.path("description").asText())
+                        .append("\n\n");
             }
 
             return sb.toString();
@@ -197,7 +199,7 @@ public class EspnClient {
             JsonNode root = mapper.readTree(response.body().string());
             JsonNode athletes = root.path("athletes");
 
-            StringBuilder sb = new StringBuilder("👥 Giocatori NFL (ID squadra: " + id + ")\n\n");
+            StringBuilder sb = new StringBuilder("👥 *Giocatori NFL* (ID squadra: " + id + ")\n\n");
 
             int count = 0;
             for (JsonNode group : athletes) {
@@ -233,7 +235,7 @@ public class EspnClient {
                     .readTree(response.body().string())
                     .path("events");
 
-            StringBuilder sb = new StringBuilder("📅 Prossime partite\n\n");
+            StringBuilder sb = new StringBuilder("📅 *Prossime partite*\n\n");
 
             int count = 0;
             for (JsonNode e : events) {
@@ -265,37 +267,35 @@ public class EspnClient {
             String abbrev = team.path("abbreviation").asText("N/A");
             String color = team.path("color").asText("N/A");
             String altColor = team.path("alternateColor").asText("N/A");
-            String location = team.path("location").asText("N/A");
+            String location = team.path("franchise").path("venue").path("address").path("city").asText("N/A");
             String standing = team.path("standingSummary").asText("N/A");
-
-            // ✅ LOGO
+            String venue = team.path("franchise").path("venue").path("fullName").asText("N/A");
             String logoUrl = "N/A";
             JsonNode logos = team.path("logos");
             if (logos.isArray() && logos.size() > 0) {
                 logoUrl = logos.get(0).path("href").asText("N/A");
             }
-
-            // ✅ STADIO
-            String venue = "N/A";
-            JsonNode venues = root.path("venues");
-            if (venues.isArray() && venues.size() > 0) {
-                venue = venues.get(0).path("fullName").asText("N/A");
+            String summary = "N/A";
+            JsonNode record = team.path("record").path("items");
+            if (record.isArray() && record.size() > 0) {
+                summary = record.get(0).path("summary").asText("N/A");
             }
 
             String text = """
-🏈 **%s (%s)**
-
-📍 Città: %s
-🏟 Stadio: %s
-🎨 Colori: #%s / #%s
-📊 Posizione: %s
-🆔 Team ID: %d
-""".formatted(
+                    🏈 *%s (%s)*
+                    
+                    📍 Locazione: %s
+                    🏟 Stadio: %s
+                    🎨 Colori: #%s / #%s
+                    📊 Posizione: %s
+                         Record: %s
+                    🆔 Team ID: %d
+                    """.formatted(
                     name, abbrev,
                     location,
                     venue,
                     color, altColor,
-                    standing,
+                    standing, summary,
                     teamId
             );
 
