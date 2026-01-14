@@ -164,7 +164,7 @@ public class EspnClient {
                     .readTree(response.body().string())
                     .path("articles");
 
-            StringBuilder sb = new StringBuilder("📰 NFL News\n\n");
+            StringBuilder sb = new StringBuilder("📰 Ultime NFL News ESPN\n\n");
 
             int count = 0;
             for (JsonNode a : articles) {
@@ -196,7 +196,7 @@ public class EspnClient {
             JsonNode root = mapper.readTree(response.body().string());
             JsonNode athletes = root.path("athletes");
 
-            StringBuilder sb = new StringBuilder("👥 Giocatori NFL (Sample)\n\n");
+            StringBuilder sb = new StringBuilder("👥 Giocatori NFL (ID squadra: " + id + ")\n\n");
 
             int count = 0;
             for (JsonNode group : athletes) {
@@ -218,49 +218,6 @@ public class EspnClient {
         }
     }
 
-    public static String getLeaders() {
-
-        String url = BASE_URL + "/leaders";
-
-        Request request = new Request.Builder().url(url).build();
-
-        try (Response response = client.newCall(request).execute()) {
-
-            if (!response.isSuccessful()) {
-                return "❌ Errore ESPN: " + response.code();
-            }
-
-            JsonNode root = mapper.readTree(response.body().string());
-            JsonNode categories = root.path("categories");
-
-            StringBuilder sb = new StringBuilder("🔥 NFL – Leader Statistici\n\n");
-
-            int catCount = 0;
-            for (JsonNode cat : categories) {
-                if (catCount++ == 3) break;
-
-                sb.append("📊 ").append(cat.path("name").asText()).append("\n");
-
-                JsonNode leaders = cat.path("leaders");
-                for (int i = 0; i < Math.min(3, leaders.size()); i++) {
-                    JsonNode l = leaders.get(i);
-
-                    sb.append("• ")
-                            .append(l.path("athlete").path("displayName").asText())
-                            .append(" (")
-                            .append(l.path("value").asText())
-                            .append(")\n");
-                }
-                sb.append("\n");
-            }
-
-            return sb.toString();
-
-        } catch (Exception e) {
-            return "❌ Errore parsing leaders";
-        }
-    }
-
     public static String getTodayGames() {
 
         String url = BASE_URL + "/scoreboard";
@@ -275,7 +232,7 @@ public class EspnClient {
                     .readTree(response.body().string())
                     .path("events");
 
-            StringBuilder sb = new StringBuilder("📅 Partite di oggi\n\n");
+            StringBuilder sb = new StringBuilder("📅 Prossime partite\n\n");
 
             int count = 0;
             for (JsonNode e : events) {
@@ -325,6 +282,4 @@ public class EspnClient {
             return "❌ Errore caricamento team";
         }
     }
-
-
 }

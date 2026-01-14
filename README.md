@@ -66,12 +66,14 @@ Inviare il comando /start
 
 Comandi disponibili
 /start	Avvia il bot e registra l’utente
-/results	Mostra le ultime partite NFL
+/results	Mostra gli ultimi risultati delle partite NFL
+/nextgames Stampa prossime partite
 /save	Salva le ultime partite
 /stats	Statistiche di utilizzo del bot
 /roster Giocatiori di una squadra
 /teams Stampa tutte le squadre
 /team Dettagli di una squadra
+/news Stampa ultime notizie ESPN sulla NFL
 /help	Lista comandi disponibili
 
 Database SQLite

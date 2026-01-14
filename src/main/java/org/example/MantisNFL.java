@@ -123,16 +123,13 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                     
                     🏈 Partite
                     /results   – Risultati e match futuri
-                    /nextgames     – Partite di oggi
-                    
-                    🏆 Classifiche
-                    /standings – Classifica NFL
-                    /leaders   – Leader statistici
+                    /nextgames     – Prossime partite
                     
                     📰 Info
                     /teams     – Squadre NFL
-                    /roster   – Giocatori
-                    /news      – Ultime news
+                    /team      - Singola squadra
+                    /roster   – Giocatori di una squadra
+                    /news      – Ultime news ESPN
                     
                     📊 Bot
                     /save – Partite salvate
@@ -164,7 +161,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                         Esempio: 12 = Kansas City Chiefs
                         """;
             }
-            case "/leaders" -> response = EspnClient.getLeaders();
+            //case "/leaders" -> response = EspnClient.getLeaders();
             case "/nextgames" -> response = EspnClient.getTodayGames();
 
             // ---------------- DATABASE ----------------
