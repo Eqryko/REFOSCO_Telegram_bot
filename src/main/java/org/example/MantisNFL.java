@@ -103,14 +103,13 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                     • Storico utilizzo bot
                     
                     📌 **Comandi principali**
-                    /results   – Risultati e prossime partite  
-                    /standings – Classifica NFL  
+                    /results   – Risultati e prossime partite
                     /teams     – Squadre NFL  
+                    /team      - Singola squadra
                     /news      – Ultime news  
-                    /players   – Giocatori  
-                    /leaders   – Leader statistici  
-                    /today     – Partite di oggi  
-                    /lastgames – Partite salvate  
+                    /roster   – Giocatori  
+                    /nextgames     – Prossime partite 
+                    /save      – Partite salvate  
                     /stats     – Statistiche bot  
                     /help      – Aiuto
                     
@@ -124,7 +123,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                     
                     🏈 Partite
                     /results   – Risultati e match futuri
-                    /today     – Partite di oggi
+                    /nextgames     – Partite di oggi
                     
                     🏆 Classifiche
                     /standings – Classifica NFL
@@ -136,7 +135,7 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                     /news      – Ultime news
                     
                     📊 Bot
-                    /lastgames – Partite salvate
+                    /save – Partite salvate
                     /stats     – Statistiche utilizzo
                     """;
 
@@ -166,12 +165,12 @@ public class MantisNFL implements LongPollingSingleThreadUpdateConsumer {
                         """;
             }
             case "/leaders" -> response = EspnClient.getLeaders();
-            case "/today" -> response = EspnClient.getTodayGames();
+            case "/nextgames" -> response = EspnClient.getTodayGames();
 
             // ---------------- DATABASE ----------------
 
             case "/stats" -> response = getStats();
-            case "/lastgames" -> response = getLastGames();
+            case "/save" -> response = getLastGames();
 
             default -> response = "❌ Comando non riconosciuto. Usa /help";
         }

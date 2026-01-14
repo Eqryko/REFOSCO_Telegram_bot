@@ -6,7 +6,7 @@ Il bot permette di consultare risultati, salvare dati, tracciare statistiche
 di utilizzo e mantenere uno stato persistente grazie a un database SQLite.
 
 Il progetto è stato realizzato come esercizio didattico per la materia **TPSIT**
-e rispetta i requisiti di utilizzo di API REST, database e gestione sicura
+e rispetta i requisiti di utilizzo di API, database e gestione sicura
 delle configurazioni.
 
 ---
@@ -14,31 +14,27 @@ delle configurazioni.
 ## Funzionalità principali
 
 - Consultazione risultati NFL aggiornati
+- Consultazione giocatori squadre NFL
 - Memorizzazione utenti Telegram
 - Salvataggio partite nel database
 - Statistiche di utilizzo dei comandi
 - Stato persistente (SQLite)
 - Output pulito e leggibile (no JSON grezzo)
-- Configurazione sicura tramite file esterno
 
 ---
 
 ## API utilizzata
 
-### Highlightly – American Football API
+### ESPN – American Football API
 
 - **Base URL**:  
-  https://american-football.highlightly.net
+  https://site.api.espn.com/apis/site/v2/sports/football/nfl
 
-- **Documentazione ufficiale**:  
-  https://highlightly.net/documentation/american-football/
+- **Documentazione **:  
+  https://github.com/pseudo-r/Public-ESPN-API
 
 ### Autenticazione
-Le richieste API richiedono il seguente header:
-x-rapidapi-key: YOUR_API_KEY
-
-
-⚠️ L’API key **NON è inclusa nel repository** per motivi di sicurezza.
+Non è richiesta una API key.
 
 ---
 
@@ -49,7 +45,6 @@ x-rapidapi-key: YOUR_API_KEY
 - Maven
 - IntelliJ IDEA (consigliato)
 - Account Telegram
-- API Key Highlightly
 
 ---
 
@@ -60,24 +55,7 @@ Assicurarsi che IntelliJ carichi correttamente il file `pom.xml`.
 
 ---
 
-### 🔹 Configurazione API Key
-
-1. Creare un file `config.properties` nella root del progetto
-2. Inserire al suo interno:
-
-```properties
-highlightly.api.key=INSERISCI_LA_TUA_API_KEY
-```
-3. Il file è escluso dal versionamento tramite .gitignore
-
-File di esempio fornito
-
-config.properties.example
-
-highlightly.api.key=YOUR_API_KEY_HERE
-
-🔹 Avvio del bot
-
+### 🔹 Configurazione Bot
 Avviare la classe Main
 
 Aprire Telegram
@@ -87,11 +65,13 @@ Cercare il bot tramite username
 Inviare il comando /start
 
 Comandi disponibili
-Comando	Descrizione
 /start	Avvia il bot e registra l’utente
 /results	Mostra le ultime partite NFL
 /lastgames	Mostra le ultime partite salvate
 /stats	Statistiche di utilizzo del bot
+/roster
+/teams
+/team
 /help	Lista comandi disponibili
 
 Database SQLite
